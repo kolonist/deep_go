@@ -1,6 +1,7 @@
 package main
 
 import (
+	"cmp"
 	"reflect"
 	"testing"
 
@@ -9,36 +10,134 @@ import (
 
 // go test -v homework_test.go
 
-type OrderedMap struct {
-	// need to implement
+type BTree[K cmp.Ordered, V any] struct {
+	Key   K
+	Value V
+	Empty bool
+	Left  *BTree[K, V]
+	Right *BTree[K, V]
 }
 
-func NewOrderedMap() OrderedMap {
-	return OrderedMap{} // need to implement
+func NewBTree[K cmp.Ordered, V any]() *BTree[K, V] {
+	return &BTree[K, V]{
+		Empty: true,
+	}
 }
 
-func (m *OrderedMap) Insert(key, value int) {
-	// need to implement
+func (t *BTree[K, V]) AddOrUpdate(key K, value V) bool {
+	if t.Empty || t.Key == key {
+		t.Key = key
+		t.Value = value
+
+		wasEmpty := t.Empty
+		t.Empty = false
+
+		return wasEmpty
+	}
+
+	if key < t.Key {
+		if t.Left == nil {
+			t.Left = NewBTree[K, V]()
+		}
+		return t.Left.AddOrUpdate(key, value)
+	}
+
+	if t.Right == nil {
+		t.Right = NewBTree[K, V]()
+	}
+	return t.Right.AddOrUpdate(key, value)
 }
 
-func (m *OrderedMap) Erase(key int) {
-	// need to implement
+func (t *BTree[K, V]) Delete(key K) bool {
+	if t.Key == key {
+		t.Empty = true
+		return true
+	}
+
+	var node *BTree[K, V]
+	if key < t.Key {
+		node = t.Left
+	} else {
+		node = t.Right
+	}
+
+	if node == nil {
+		return false
+	}
+
+	return node.Delete(key)
 }
 
-func (m *OrderedMap) Contains(key int) bool {
-	return false // need to implement
+func (t *BTree[K, V]) IsSet(key K) bool {
+	if t.Key == key {
+		return !t.Empty
+	}
+
+	var node *BTree[K, V]
+	if key < t.Key {
+		node = t.Left
+	} else {
+		node = t.Right
+	}
+
+	if node == nil {
+		return false
+	}
+
+	return node.IsSet(key)
 }
 
-func (m *OrderedMap) Size() int {
-	return 0 // need to implement
+func (t *BTree[K, V]) ForEach(action func(K, V)) {
+	if t.Left != nil {
+		t.Left.ForEach(action)
+	}
+
+	if !t.Empty {
+		action(t.Key, t.Value)
+	}
+
+	if t.Right != nil {
+		t.Right.ForEach(action)
+	}
 }
 
-func (m *OrderedMap) ForEach(action func(int, int)) {
-	// need to implement
+type OrderedMap[K cmp.Ordered, V any] struct {
+	tree *BTree[K, V]
+	len  int
+}
+
+func NewOrderedMap[K cmp.Ordered, V any]() OrderedMap[K, V] {
+	return OrderedMap[K, V]{
+		tree: NewBTree[K, V](),
+	}
+}
+
+func (m *OrderedMap[K, V]) Insert(key K, value V) {
+	if m.tree.AddOrUpdate(key, value) {
+		m.len++
+	}
+}
+
+func (m *OrderedMap[K, V]) Erase(key K) {
+	if m.tree.Delete(key) {
+		m.len--
+	}
+}
+
+func (m *OrderedMap[K, V]) Contains(key K) bool {
+	return m.tree.IsSet(key)
+}
+
+func (m *OrderedMap[K, V]) Size() int {
+	return m.len
+}
+
+func (m *OrderedMap[K, V]) ForEach(action func(K, V)) {
+	m.tree.ForEach(action)
 }
 
 func TestCircularQueue(t *testing.T) {
-	data := NewOrderedMap()
+	data := NewOrderedMap[int, int]()
 	assert.Zero(t, data.Size())
 
 	data.Insert(10, 10)
