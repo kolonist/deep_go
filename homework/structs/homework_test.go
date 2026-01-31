@@ -55,7 +55,7 @@ func UnpackToString(src *byte, srcLen int) string {
 		byteIdx := bitIdx / 8
 		shift := bitIdx % 8
 
-		// get 4 bytes from destination for better experience with rune bit operations
+		// get 4 bytes from sorce for better experience with rune bit operations
 		srcPtr := (*uint32)(unsafe.Add(unsafe.Pointer(src), byteIdx))
 
 		// shift `shift` bits left to place start of the 7-bit symbol to the start of the 32-bits structure
