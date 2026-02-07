@@ -46,9 +46,17 @@ func Append(err error, errs ...error) *MultiError {
 }
 
 func TestMultiError(t *testing.T) {
+	err1 := errors.New("error 1")
+	err2 := errors.New("error 2")
+	err3 := errors.New("error 3")
+
 	var err error
-	err = Append(err, errors.New("error 1"))
-	err = Append(err, errors.New("error 2"))
+	err = Append(err, err1)
+	err = Append(err, err2)
+
+	assert.True(t, errors.Is(err, err1))
+	assert.True(t, errors.Is(err, err2))
+	assert.False(t, errors.Is(err, err3))
 
 	expectedMessage := "2 errors occured:\n\t* error 1\t* error 2\n"
 	assert.EqualError(t, err, expectedMessage)
